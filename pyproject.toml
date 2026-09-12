@@ -1,0 +1,17 @@
+[project]
+name = "waterpaper"
+version = "0.0.0"
+description = "WaterPaper 论文写作/降AI 工具脚本（脚本式运行，不作为包分发）"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.28",
+    "beautifulsoup4>=4.11",
+    "playwright>=1.40",
+    "python-docx>=0.8",
+    "Pillow>=9.0",
+]
+
+[tool.uv]
+# tools/ 刻意不是包（tests/conftest.py 写死了这个约定：零交叉导入、脚本式运行）：
+# 关掉「把本项目当包构建安装」，否则 uv 会因缺少 build backend 而报错。
+package = false
