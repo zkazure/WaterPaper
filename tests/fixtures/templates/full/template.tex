@@ -1,0 +1,105 @@
+% !TEX program = xelatex
+% ===========================================================================
+% 测试用「完整学校模板」样例
+%
+% 模拟真实场景：带封面页、原创性声明、摘要环境、目录、示例章节、
+% \bibliography{refs} 参考文献机制 —— 用于验证「外壳优先」注入路径。
+% ===========================================================================
+\documentclass[12pt,a4paper]{ctexart}
+
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3.0cm,right=2.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[hidelinks]{hyperref}
+
+% 模板自定义关键词命令（非 ctex 内置，真模板里很常见）
+\newcommand{\keywords}[1]{%
+  \vspace{1em}\noindent{\heiti 关键词：}#1%
+}
+
+\ctexset{
+  section = {
+    format = \zihao{3}\heiti,
+    name = {,、},
+    number = \chinese{section},
+    beforeskip = 12pt,
+    afterskip = 6pt,
+  },
+  subsection = {
+    format = \zihao{4}\heiti,
+    name = {,.},
+    number = \arabic{section}.\arabic{subsection},
+  },
+  subsubsection = { format = \zihao{-4}\heiti },
+}
+
+\linespread{1.5}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+
+\title{基于深度学习的水资源需求预测研究}
+\author{张三}
+\date{2026 年 6 月}
+
+\begin{document}
+
+% ------------------------------ 封面页 ------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2.5cm}
+  {\zihao{1}\heiti 某某大学\par}
+  \vspace{0.8cm}
+  {\zihao{2}\heiti 本科毕业论文（设计）\par}
+  \vspace{2.5cm}
+  {\zihao{3}\heiti 基于深度学习的水资源需求预测研究\par}
+  \vfill
+  {\zihao{4} 学院：环境科学与工程学院\par}
+  \vspace{0.4cm}
+  {\zihao{4} 姓名：张三\par}
+  \vspace{0.4cm}
+  {\zihao{4} 学号：2022001\par}
+  \vspace{1.2cm}
+\end{titlepage}
+\newpage
+
+% --------------------------- 原创性声明页 ---------------------------
+\section*{学位论文原创性声明}
+本人郑重声明：所呈交的学位论文，是本人在导师指导下独立进行研究工作所取得的成果。
+除文中已经注明引用的内容外，本论文不含任何其他个人或集体已经发表或撰写过的作品成果。
+\vspace{1.5cm}
+
+\noindent 作者签名：\hspace{4cm} 日期：\hspace{3cm}
+\newpage
+
+% ------------------------------ 摘要页 ------------------------------
+\begin{abstract}
+这里是一段模板自带的示例摘要文字，在生成真实论文时应当被替换掉。
+\keywords{深度学习；水资源；需求预测}
+\end{abstract}
+\newpage
+
+% ------------------------------ 目录页 ------------------------------
+\tableofcontents
+\newpage
+
+% ======================== 正文开始（注入点） ========================
+\section{引言}
+
+这是模板自带的示例正文段落，用于占位。在生成真实论文时，从本行开始到参考文献之前的内容应被整体替换。
+
+\subsection{研究背景}
+
+示例子章节文字。
+
+\section{结论}
+
+示例结论文字。
+
+% ======================== 正文结束（注入点停止） ====================
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

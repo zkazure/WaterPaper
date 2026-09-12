@@ -1,0 +1,32 @@
+% !TEX program = lualatex
+% 测试用「无参考文献机制的模板」样例
+%
+% 模拟真实场景：模板结构完整、可注入，但既没有 \bibliography 也没有
+% thebibliography —— 应当走「正文内嵌 thebibliography 手写条目」路径。
+
+\documentclass[11pt]{ctexart}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+
+\linespread{1.4}
+\setlength{\parindent}{2em}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+模板自带示例摘要，应当被替换。
+\end{abstract}
+
+% ---------- 从这里开始写正文 ----------
+\section{示例章节一}
+
+模板自带的示例正文，应当被整体替换。
+
+\section{示例章节二}
+
+模板自带的示例正文，应当被整体替换。
+
+\end{document}
