@@ -1,0 +1,110 @@
+% ===========================================================================
+% WaterPaper 内置兜底骨架
+%
+% 使用场景：用户提供的 LaTeX 模板残缺（无 \begin{document} / 无正文注入点 /
+% 原样编译失败无法定位），或用户只给了文字格式要求。此时用本骨架 + 从模板
+% 抽出的排版参数覆盖）仍能产出 PDF。
+%
+% 排版对齐 references/default_format.md（docx 默认格式的 LaTeX 等价物）：
+%   论文标题  黑体二号加粗居中        \zihao{2}
+%   一级标题  黑体小三加粗            \zihao{-3}
+%   二级标题  黑体四号加粗            \zihao{4}
+%   三级标题  黑体小四加粗            \zihao{-4}
+%   正文      宋体小四，1.5 倍行距，首行缩进 2 字符
+%   摘要标题  黑体小四加粗居中
+%   关键词    标签黑体小四加粗顶格，内容宋体小四，分号分隔
+%   图题      宋体五号居中，置于图下方
+%   表题      宋体五号加粗居中，置于表上方
+%   参考文献  宋体五号（GB/T 7714）
+%
+% 占位符由 tools/build_paper_pdf.py 替换。注意：本注释区**不得**写出占位符
+% 字面量 —— 否则朴素字符串替换会先命中注释，把正文注入到 \documentclass
+% 之前，报错还是让人摸不着头脑的 "Missing \begin{document}"。
+% build 脚本会断言每个占位符恰好出现一次。
+%
+% 需替换的占位符（括号内为用途）：
+%   WP_TITLE             论文标题
+%   WP_AUTHOR            作者（无则留空）
+%   WP_STYLE_OVERRIDES   从用户模板抽取的排版参数覆盖（可为空）
+%   WP_ABSTRACT_BEGIN / WP_ABSTRACT_END   之间的块在无摘要时整段删除
+%   WP_ABSTRACT          摘要正文
+%   WP_KEYWORDS          关键词
+%   WP_CONTENT           正文（body.tex 内容）
+%   WP_BIBLIOGRAPHY      参考文献机制（bibtex 模式下填 \bibliography，
+%                        否则留空，因为 thebibliography 已内嵌在正文里）
+% ===========================================================================
+\documentclass[12pt,a4paper]{ctexart}
+
+\usepackage[top=2.54cm,bottom=2.54cm,left=3.18cm,right=3.18cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+% 关键词命令（ctexart 未内置，学校模板通常也自己定义）
+\newcommand{\keywords}[1]{%
+  \par\vspace{0.8em}\noindent{\heiti\zihao{-4}关键词：}{\zihao{-4}#1}%
+}
+
+% 章节层级格式：对齐 default_format.md
+\ctexset{
+  section = {
+    format = \zihao{-3}\heiti,
+    name = {,、},
+    number = \chinese{section},
+    beforeskip = 12pt,
+    afterskip = 6pt,
+  },
+  subsection = {
+    format = \zihao{4}\heiti,
+    name = {,.},
+    number = \arabic{section}.\arabic{subsection},
+    beforeskip = 6pt,
+    afterskip = 3pt,
+  },
+  subsubsection = {
+    format = \zihao{-4}\heiti,
+    beforeskip = 3pt,
+    afterskip = 0pt,
+  },
+}
+
+% 图题宋体五号居中（置于图下）；表题宋体五号加粗居中（置于表上）
+\captionsetup[figure]{font=small,labelfont=small,labelsep=colon,position=below}
+\captionsetup[table]{font={small,bf},labelfont={small,bf},labelsep=colon,position=above}
+% 摘要标题：黑体小四加粗居中（ctexart 默认已居中，\abstractnamefont 并不存在，
+% 所以直接通过 ctexset 把字体字号写进 abstractname）
+\ctexset{abstractname = {\heiti\zihao{-4}摘要}}
+
+% 正文：宋体小四，1.5 倍行距，首行缩进 2 字符
+\linespread{1.5}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+
+\title{%%WP_TITLE%%}
+\author{%%WP_AUTHOR%%}
+\date{}
+
+% 从用户模板抽取到的排版参数（覆盖上面的默认值；无则留空）
+%%WP_STYLE_OVERRIDES%%
+
+\begin{document}
+
+\maketitle
+
+%%WP_ABSTRACT_BEGIN%%
+\begin{abstract}
+%%WP_ABSTRACT%%
+\keywords{%%WP_KEYWORDS%%}
+\end{abstract}
+%%WP_ABSTRACT_END%%
+
+\newpage
+
+%%WP_CONTENT%%
+
+%%WP_BIBLIOGRAPHY%%
+
+\end{document}
