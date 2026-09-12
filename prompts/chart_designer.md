@@ -7,6 +7,7 @@
 ## 核心原则：全自动，不询问
 
 图表生成全程自动化执行，禁止向用户确认以下任何事项：
+
 - ❌ "需要生成图表吗？"
 - ❌ "这里应该放什么类型的图？"
 - ❌ "图表放在哪个位置？"
@@ -60,6 +61,7 @@
 ```
 
 SVG 生成规则：
+
 - X 轴为类别，Y 轴为数值
 - 柱宽 40-60px，间距 20-30px
 - Y 轴刻度留 10% 顶部空间
@@ -121,7 +123,7 @@ SVG 生成规则：
 ## 图表规范
 
 | 规范 | 要求 |
-|------|------|
+| ------ | ------ |
 | 分辨率 | 渲染时 2x DPR（实际像素为显示尺寸 2 倍） |
 | 配色 | 学术风格，低饱和度，避免荧光色 |
 | 字体 | 中文用 SimSun/宋体，英文数字用 Times New Roman |
@@ -141,8 +143,9 @@ charts/fig2_[图表名].html
 ```
 
 渲染命令：
+
 ```bash
-python tools/render_html_chart.py charts/fig1_xxx.html -o charts/fig1_xxx.png
+uv run python tools/render_html_chart.py charts/fig1_xxx.html -o charts/fig1_xxx.png
 ```
 
 PNG 插入正文时使用相对路径，如 `charts/fig1_xxx.png`。

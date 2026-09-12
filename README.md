@@ -5,7 +5,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-pre--release-orange" alt="status">
-  <img src="https://img.shields.io/badge/python-3.9+-blue" alt="python">
+  <img src="https://img.shields.io/badge/python-3.10+-blue" alt="python">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
@@ -42,6 +42,20 @@
 </table>
 
 ---
+
+## 安装与环境
+
+Python 依赖由 [`uv`](https://docs.astral.sh/uv/) 管理。在**本仓库根目录**执行：
+
+```bash
+uv sync                              # 建 .venv 并装齐依赖（必做）
+uv run playwright install chromium   # 图表渲染需要浏览器（生成图表时必需）
+```
+
+- `pyproject.toml` 声明依赖、`uv.lock` 锁定版本；`requirements.txt` 是 `uv export` 产物，
+  供不用 uv 的环境 `pip install -r`，**不要手工编辑**
+- 之后所有 `tools/` 命令都写成 `uv run python tools/xxx.py`（文档中已如此标注）
+- PDF 链路还需系统安装 TeX Live，见下文「快速开始」中的说明
 
 ## 快速开始
 
@@ -94,7 +108,7 @@ template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探�
 【水论文.skill】把这些事自动化了：
 
 | 环节 | 手工方式 | 大模型客户端 | 【水论文.skill】 |
-|------|----------|-------------|------------|
+| ------ | ---------- | ------------- | ------------ |
 | 选题 | 绞尽脑汁想 1 个 | AI 生成选题，但无真实文献支撑 | 一句话出 5 角度 × 2 选题 = 10 个 |
 | 文献 | 翻 CNKI、万方，复制粘贴 | ❌ 编造参考文献，标题作者看似真实 | 多源爬虫自动抓取，去重去假 |
 | 格式 | 对着模板一行行调 | 需手动描述格式，无法精确复刻 | 上传 .docx / .tex 模板 → 自动提取 → 严格复刻 |
@@ -109,7 +123,7 @@ template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探�
 ## 文献数据源
 
 | 数据源 | 接入方式 | 中文覆盖 | 可靠性 | 速率 |
-|--------|---------|----------|--------|------|
+| -------- | --------- | ---------- | -------- | ------ |
 | CrossRef | REST API（免费） | 一般 | ✅ 高 | 50 req/s |
 | Semantic Scholar | REST API（免费） | 一般 | ✅ 高 | 受 API Key 控制 |
 | 百度学术 | Web 抓取 | ✅ 好 | ⚠️ 中（需核验） | — |
@@ -120,7 +134,7 @@ template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探�
 ## 论文结构（课程论文）
 
 | 论文字数 | 中文文献 | 英文文献 | 章节结构 |
-|----------|----------|----------|----------|
+| ---------- | ---------- | ---------- | ---------- |
 | 3000-4000 | 4-6 | 1-2 | 引言 + 2 章正文 + 结论 |
 | 4000-6000 | 5-7 | 2-3 | 引言 + 2-3 章正文 + 结论 |
 | 6000-8000 | 6-8 | 2-4 | 引言 + 3 章正文 + 结论 |
@@ -153,6 +167,7 @@ template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探�
 **【水论文.skill】内置了两道防线，在 PaperPass 上实战验证过：**
 
 **第一道：降AI处理（D0-D7 七维约束 + PaperPass 五模式扫码）**
+
 - 整合了 thesis-optimizer 项目的 30+ AI 模式分类学和三级词汇黑名单
 - D0 最小干预原则：句内微调，不搞大段 AI 式重写
 - D1 句长分布：主动制造长短句交替，打破 AI 的钟形句长分布
@@ -165,6 +180,7 @@ template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探�
 - 写作完成后自动运行 `humanize_check.py` 验证（含并列检测），不通过不交付
 
 **第二道：降重处理（深度语义改写）**- 标准定义段：重新组织语序，避免教科书式表述
+
 - 文献综述段：分类归纳 + 多源归并引用，不做文献流水账
 - 方法描述段：增加"为什么选择此方法"的动机说明
 - 结论总结段：用具体发现替换泛泛总结
@@ -242,7 +258,10 @@ flowchart TD
 ```
 WaterPaper/
 ├── SKILL.md                          # 技能主定义
-├── requirements.txt                  # Python 依赖
+├── pyproject.toml                    # Python 依赖声明（真源）
+├── uv.lock                           # 依赖锁定（由 uv 生成）
+├── .python-version                   # 开发环境 Python 版本（3.13）
+├── requirements.txt                  # 依赖导出（uv export 产物，勿手改）
 │
 ├── prompts/                          # AI 提示词模板
 │   ├── format_extractor.md           #   格式提取（.docx / .tex 模板 & 文字描述）

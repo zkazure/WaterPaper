@@ -116,12 +116,12 @@
 
 ```bash
 # 1. 分析模板（含原样编译探测）
-python tools/analyze_latex_template.py template.tex \
+uv run python tools/analyze_latex_template.py template.tex \
     --json-out papers/20260912_001/20260912_001_latex_profile.json \
     --text-out papers/20260912_001/20260912_001_template_text.txt
 
 # 2. md → LaTeX 正文（按 profile 决定章节映射与参考文献机制）
-python tools/md_to_latex.py papers/20260912_001/20260912_001_论文终稿.md \
+uv run python tools/md_to_latex.py papers/20260912_001/20260912_001_论文终稿.md \
     -o papers/20260912_001/20260912_001_body.tex \
     --profile papers/20260912_001/20260912_001_latex_profile.json \
     --refs papers/20260912_001/20260912_001_literature.json \
@@ -130,7 +130,7 @@ python tools/md_to_latex.py papers/20260912_001/20260912_001_论文终稿.md \
     --report papers/20260912_001/20260912_001_convert_report.json
 
 # 3. 组装 + 编译
-python tools/build_paper_pdf.py \
+uv run python tools/build_paper_pdf.py \
     --body papers/20260912_001/20260912_001_body.tex \
     --profile papers/20260912_001/20260912_001_latex_profile.json \
     --report papers/20260912_001/20260912_001_convert_report.json \

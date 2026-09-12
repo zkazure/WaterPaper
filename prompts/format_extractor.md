@@ -18,13 +18,14 @@
 当用户提供 `.docx` 模板文件路径时：
 
 ```
-步骤 1: 运行 python tools/analyze_template.py <template.docx> --json-out style_profile.json --text-out template_text.txt
+步骤 1: 运行 uv run python tools/analyze_template.py <template.docx> --json-out style_profile.json --text-out template_text.txt
 步骤 2: 读取 style_profile.json 获取正则提取的结构化样式
 步骤 3: 读取 template_text.txt，LLM 逐段分析全文，作为正则提取的格式补充
 步骤 4: 合并正则提取结果和 LLM 分析结果，回传用户确认
 ```
 
 工具会自动提取以下元素的样式：
+
 - 论文标题
 - 摘要标题、Abstract 标题
 - 关键词行
@@ -60,7 +61,7 @@
 当用户提供 `.tex` 模板路径时：
 
 ```
-步骤 1: 运行 python tools/analyze_latex_template.py <template.tex> \
+步骤 1: 运行 uv run python tools/analyze_latex_template.py <template.tex> \
             --json-out latex_profile.json --text-out latex_template_text.txt
 步骤 2: 读取 latex_profile.json（脚本已抽取的机器可读结论）
 步骤 3: 读取 latex_template_text.txt（带行号标注的全全文），LLM 核对与补充
@@ -70,7 +71,7 @@
 ### 必须核对的四件事
 
 | 字段 | 看什么 | 不对时的后果 |
-|------|--------|-------------|
+| ------ | -------- | ------------- |
 | `usable_as_shell` | 为 `false` 时必须走内置骨架，并**如实告知用户未用其模板及原因** | 硬套会直接编译失败，或删掉封面页 |
 | `injection.is_guess` | 为 `true` 说明锚点是推测的（模板没有显式占位注释），必须看 `removed_preview` | 实测可能把「学位论文原创性声明」页当正文删掉 |
 | `injection.keeps_template_bibliography` | 模板是否自带参考文献机制 | 处理错会出现两份参考文献，或引用全 `[?]` |
@@ -79,7 +80,7 @@
 ### 与 DOCX 提取的差异
 
 | 维度 | DOCX 模板 | LaTeX 模板 |
-|------|-----------|------------|
+| ------ | ----------- | ------------ |
 | 提取目标 | 字体/字号/加粗/对齐/行距/缩进等参数 | 外壳结构（前置页/preable/尾部）+ 注入点 + 排版命令 |
 | 字号表示 | pt 数值（“小四” → 12pt） | `\zihao` 号数（“小四” → `\zihao{-4}`），且**负号表示“小”号** |
 | 章节格式 | 逐级样式表 | `\ctexset{section/format=...}` 等命令 |
@@ -101,7 +102,7 @@
 ### 必须提取的维度
 
 | 维度 | 说明 | 常见写法 |
-|------|------|----------|
+| ------ | ------ | ---------- |
 | 论文标题 | 字体、字号、加粗、对齐 | "标题用黑体二号居中" |
 | 一级标题 | 字体、字号、加粗、段前段后 | "一级标题黑体小三加粗" |
 | 二级标题 | 字体、字号、加粗 | "二级标题黑体四号" |
@@ -116,7 +117,7 @@
 ### 字号映射
 
 | 中文编号 | 磅值 (pt) |
-|----------|-----------|
+| ---------- | ----------- |
 | 初号 | 42 |
 | 小初 | 36 |
 | 一号 | 26 |
@@ -133,7 +134,7 @@
 ### 字体映射
 
 | 用户说法 | 标准名称 |
-|----------|----------|
+| ---------- | ---------- |
 | 宋体/Times New Roman | 宋体 |
 | 黑体 | 黑体 |
 | 楷体 | 楷体 |

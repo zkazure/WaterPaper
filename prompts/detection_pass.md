@@ -2,6 +2,7 @@
 
 对已有论文进行 5 维度 AIGC 特征检测，生成结构化检测报告，并可基于 7 大改写技法对高风险段落进行改写。
 适用于：
+
 - 用户上传了一篇论文需要检测AI率
 - 对外部 AI 生成的论文进行降AI处理
 - WaterPaper 写作完成后做最终检测+改写
@@ -27,6 +28,7 @@
 ### Step 0：语言检测
 
 分析输入文本的前 500 个字符：
+
 - 非标点字符中中文字符占比 > 60% → 语言 = "zh"
 - 否则 → 语言 = "en"
 - 后续所有步骤使用检测到的语言
@@ -34,7 +36,7 @@
 **中英文维度映射**：
 
 | 中文维度 | English Dimension |
-|---------|------------------|
+| --------- | ------------------ |
 | 句式规整度 | Sentence Regularity |
 | 逻辑词密度 | Connector Density |
 | 语态特征 | Voice Characteristics |
@@ -44,10 +46,13 @@
 ### Step 1：读取文档
 
 **如果用户提供了 .docx 文件路径：**
+
 ```bash
-python tools/docx_io.py read "<文件路径>"
+uv run python tools/docx_io.py read "<文件路径>"
 ```
+
 如果 tool 路径不存在，尝试：
+
 ```bash
 python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 ```
@@ -63,6 +68,7 @@ python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 #### 维度 1：句式规整度（权重 25%）
 
 对应学术方法：突发性检测 (Burstiness)。检测：
+
 - **中文**：模板化句式（"首先...其次...最后..."、"一是...二是...三是..."）
 - **英文**：Template transitions ("Firstly...Secondly...In conclusion...", "It is important to note that...")
 - 句长过于均匀（缺乏长短句交错）
@@ -72,6 +78,7 @@ python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 #### 维度 2：逻辑词密度（权重 20%）
 
 对应学术方法：模式匹配 + 词频分析。检测：
+
 - **中文**：连接词频率异常（"综上所述""由此可见""具体而言""也就是说"），对照 `references/ai_vocabulary_blacklist.md`
 - **英文**：Hedging language overuse ("it is worth noting that", "arguably", "may suggest")
 - 机械化的过渡句，逻辑词在相似位置反复出现
@@ -79,24 +86,28 @@ python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 #### 维度 3：语态特征（权重 15%）
 
 对应学术方法：句法分析。检测：
+
 - **中文**：被动语态泛滥（"被分析""被发现""被证明"）、无主句过多、泛指表达过多
 - **英文**：Passive voice overuse ("was analyzed", "it was found that")、uniform formal register
 
 #### 维度 4：词汇多样性（权重 15%）
 
 对应学术方法：词频分布分析。检测：
+
 - **中文**：特定词汇重复率高（"显著""有效""重要""促进"等）、概念过于抽象
 - **英文**：AI overuses "significantly", "effectively", "demonstrate", "leverage", "utilize"
 
 #### 维度 5：论证深度（权重 25%）
 
 对应学术方法：语义一致性分析。检测：
+
 - 论证呈线性结构（观点→解释→结论），缺乏多维度证据
 - 缺少具体数据、案例、实验细节
 - 缺少对比研究、方法论反思、局限性讨论
 - **英文特有**：Missing methodological caveats、citation pattern uniformity
 
 **评分规则**：
+
 - 每个维度单独评分（0-100 分，100 分 = 最像 AI）
 - 整体风险评分 = 5 维度加权平均
 - 段落级风险分级：高风险（>60 分，需重点改写）/ 中风险（30-60 分，建议优化）/ 低风险（<30 分，可保持）
@@ -225,11 +236,13 @@ python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 使用 AskUserQuestion 询问用户后续操作。若当前 Agent 不支持该工具，直接输出选项编号等待用户输入。
 
 **中文选项**：
+
 1. "保存报告为 Markdown 文件" — 保存为 .md 文件
 2. "对高风险段落进行改写并输出 .docx" — 执行 Step 5 完整改写
 3. "仅查看改写建议（不修改文档）" — 输出改写建议供手动参考
 
 **English options**：
+
 1. "Save report as Markdown file"
 2. "Rewrite high-risk paragraphs and output .docx"
 3. "View rewrite suggestions only"
@@ -247,6 +260,7 @@ python ~/.claude/skills/aigc-detector/scripts/docx_io.py read "<文件路径>"
 ```bash
 cp "<原始文件路径>" "<原始文件名去扩展名>_backup.docx"
 ```
+
 如果用户提供的是文本而非文件，跳过此步。
 
 #### 5.2 执行改写
@@ -256,7 +270,7 @@ cp "<原始文件路径>" "<原始文件名去扩展名>_backup.docx"
 **改写技法优先级**（详见 `references/rewrite_methods.md`）：
 
 | 优先级 | 技法 | 针对维度 | 效果 |
-|:------:|------|---------|------|
+| :------: | ------ | --------- | ------ |
 | 1 | 句式重构 | 句式规整度 | 打破句长均匀分布 |
 | 2 | 破解AI模板 | 逻辑词密度 | 删除模板化连接词 |
 | 3 | **碎片化断句（技法八）** | **句式规整度 + PaperPass五模式** | **二字句制造节奏断裂** |
@@ -268,6 +282,7 @@ cp "<原始文件路径>" "<原始文件名去扩展名>_backup.docx"
 | 9 | 添加主语 | 语态特征 | 补充行为主体 |
 
 **改写原则**：
+
 - 保持低风险段落不变
 - 每个改写后的段落应能独立通过AIGC检测
 - 遵循 D0 最小干预原则：优先句内微调，不大段重写
@@ -292,17 +307,18 @@ cp "<原始文件路径>" "<原始文件名去扩展名>_backup.docx"
 
 ```bash
 # 首次替换（创建改写版本）
-echo "<改写后的段落文本>" | python tools/docx_io.py replace "<原始文件路径>" <段落编号> --output "<文件名>_rewritten.docx"
+echo "<改写后的段落文本>" | uv run python tools/docx_io.py replace "<原始文件路径>" <段落编号> --output "<文件名>_rewritten.docx"
 
 # 后续替换（在同一文件上继续）
-echo "<改写后的段落文本>" | python tools/docx_io.py replace "<文件名>_rewritten.docx" <段落编号> --output "<文件名>_rewritten.docx"
+echo "<改写后的段落文本>" | uv run python tools/docx_io.py replace "<文件名>_rewritten.docx" <段落编号> --output "<文件名>_rewritten.docx"
 ```
 
 #### 5.4 改写后验证
 
 改写完成后运行 `humanize_check.py` 验证：
+
 ```bash
-python tools/humanize_check.py "<改写后的文件>"
+uv run python tools/humanize_check.py "<改写后的文件>"
 ```
 
 确保通过所有检查项（句长标准差 ≥ 6、短句比例 ≥ 15%、连接词密度 ≤ 8/千字、无红灯词汇、无术语违规）。

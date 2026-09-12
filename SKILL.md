@@ -25,10 +25,12 @@
 → 执行「检测/改写模式」流程（参考 `prompts/detection_pass.md`）
 
 **如果意图不明确**，使用 AskUserQuestion 询问：
+
 1. "撰写新论文（论文写作模式）"
 2. "检测或改写已有论文（检测/改写模式）"
 
 核心差异化能力：
+
 1. **格式提取**：支持用户上传学校模板 `.docx` / `.doc`（自动提样式并转为 `.docx`）
    或 `.tex` LaTeX 模板（外壳注入，见 `references/latex_template_guide.md`），
    也支持直接粘贴格式要求
@@ -41,6 +43,9 @@
 ## Hard Gates
 
 以下规则不可违反：
+
+<!-- 门禁编号跨子节连续：通用 1-15、检测/改写 16-20、LaTeX 21-24，刻意不从 1 开始。 -->
+<!-- markdownlint-disable MD029 -->
 
 1. 用户提出论文需求后，必须先索要学校模板或格式要求：
    - Word 模板：`D:\学校论文模板.docx` / `.doc`
@@ -60,7 +65,7 @@
 10. 如果爬虫脚本运行失败或返回空结果，必须如实告知用户，不得偷偷用 AI 编造文献替代。
 11. 生成成稿时，如果用户提供了模板/格式要求，必须使用提取的样式配置，不能退回默认格式。
 12. 写作阶段必须应用 D0-D7 降AI约束（参考 `prompts/humanize_constraints.md`，默认 medium 档；参考 `references/ai_pattern_taxonomy.md` 了解 30+ AI 模式；参考 `references/paperpass_patterns.md` 了解 PaperPass 五大致命模式及破解实例；参考 `references/ai_vocabulary_blacklist.md` 了解三级词汇黑名单；参考 `references/term_whitelist.md` 了解术语保护白名单），不得使用禁用的 AI 高频连接词和套话。
-13. 成稿前必须运行 `python tools/humanize_check.py <paper.md> --markdown` 验证，句长标准差 ≥ 6、连接词密度 ≤ 8/千字、无红色高风险词、无术语保护违规 才能交付。
+13. 成稿前必须运行 `uv run python tools/humanize_check.py <paper.md> --markdown` 验证，句长标准差 ≥ 6、连接词密度 ≤ 8/千字、无红色高风险词、无术语保护违规 才能交付。
 14. 所有产物（中间产物 + 最终交付物）必须存放在 `papers/{YYYYMMDD}_{序号}/` 目录下，文件名统一使用 `{YYYYMMDD}_{序号}_{描述}.{ext}` 格式。包括论文 `.md` 终稿、`.docx` 成稿、`.pdf` 成稿、`.tex` 源文件、图表 `.png` 渲染成品。禁止将任何产物散落在用户模板文件所在目录。
 15. 降AI检查通过后，必须运行 `prompts/plagiarism_pass.md` 降重流程，对全文中高风险段落（标准定义、文献综述、方法描述、结论汇总）进行深度语义改写，确保通用知识表述不与现有文献雷同。
 
@@ -76,8 +81,10 @@
 16. 检测论文时，必须先读取全文再进行 5 维度语义分析，不得跳过任何维度。
 17. 检测报告必须包含完整的维度评分表、段落级分析和改写优先级排序。
 18. 改写时必须遵循 9 大改写技法优先级（句式重构 > 破解模板 > 碎片化断句 > 论证补全 > 概念具象 > 空行破并列 > 困惑度提升 > 风格断裂 > 添加主语），详见 `references/rewrite_methods.md`。PaperPass 五模式优先使用技法八（碎片化断句）和技法九（空行分段破并列），详见 `references/paperpass_patterns.md`。
-19. 改写后必须运行 `python tools/humanize_check.py <file> --markdown` 验证通过（句长标准差 ≥ 6、连接词密度 ≤ 8/千字、无红色高风险词、无术语保护违规）。
+19. 改写后必须运行 `uv run python tools/humanize_check.py <file> --markdown` 验证通过（句长标准差 ≥ 6、连接词密度 ≤ 8/千字、无红色高风险词、无术语保护违规）。
 20. 检测/改写产物必须放入 `papers/{YYYYMMDD}_{序号}/` 目录，与写作模式产物管理规则一致。
+
+<!-- markdownlint-restore -->
 
 ## Execution States
 
@@ -98,6 +105,7 @@ intake → format_confirmed → topic_selection → topic_confirmed → literatu
 11. `delivery` — 已交付全部产物
 
 状态约束：
+
 - 未进入 `format_confirmed` 前，禁止生成选题（除非用户明确说用默认格式）
 - 未进入 `topic_confirmed` 前，禁止运行文献采集
 - 未进入 `literature_collected` 前，禁止生成大纲
@@ -133,7 +141,7 @@ intake → language_detected → doc_loaded → analysis_done → report_done �
 用户首次提出论文需求时，必须确认：
 
 | 信息项 | 说明 | 示例 |
-|--------|------|------|
+| -------- | ------ | ------ |
 | 课程名称 | 哪门课的期末论文 | 《管理学原理》 |
 | 学科领域 | 论文所属学科 | 企业管理 / 计算机科学 / 经济学 |
 | 字数要求 | 正文字数范围 | 5000 字 |
@@ -161,24 +169,29 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 ```
 
 **如果用户提供了 .docx 模板：**
-1. 运行 `python tools/analyze_template.py <模板路径> --json-out style_profile.json --text-out template_text.txt`
+
+1. 运行 `uv run python tools/analyze_template.py <模板路径> --json-out style_profile.json --text-out template_text.txt`
 2. 读取 `style_profile.json` 获取正则提取的结构化样式
 3. 读取 `template_text.txt`，由 LLM 逐段分析全文，发现正则遗漏的格式特征（详见 `prompts/format_extractor.md` 中"LLM 全量文字分析"部分）
 4. 合并两套结果，检查冲突项
 5. 将格式分析结果回传用户确认
 
 **如果用户粘贴了格式要求：**
+
 1. 按照 `prompts/format_extractor.md` 中的维度解析文字描述
 2. 将字号映射（"小四" → 12pt, "二号" → 22pt 等）
 3. 构建结构化样式配置
 4. 回传格式分析表给用户确认
 
 **如果用户提供了 .tex LaTeX 模板：**
+
 1. 运行：
+
    ```
-   python tools/analyze_latex_template.py <模板路径> \
+   uv run python tools/analyze_latex_template.py <模板路径> \
        --json-out latex_profile.json --text-out template_text.txt
    ```
+
 2. 读取 `latex_profile.json`：引擎、文档类、宏包能力、注入点与替换区间、排版参数、编译探测结论
 3. 读取 `template_text.txt`（带行号标注），由 LLM 核对注入区间是否合理、有无正则遗漏的格式特征
 4. **重点核对三件事**（详见 `references/latex_template_guide.md`）：
@@ -189,11 +202,13 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 6. 将格式分析结果回传用户确认
 
 **如果用户说"没有模板，用默认格式"：**
+
 - Word 链路：直接使用 `references/default_format.md`
 - LaTeX 链路：直接使用 `assets/default_paper.tex`（规范见 `references/default_latex_format.md`）
 - 跳过格式提取，进入选题阶段
 
 格式分析回传必须包含：
+
 1. 格式配置表（所有元素：字体、字号、加粗、对齐、行距、缩进）
 2. 与默认格式的差异/冲突项
 3. 样式配置文件路径（如有）
@@ -205,12 +220,14 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 基于用户需求，生成 5 个角度 × 每个角度 2 个选题 = 10 个选题。
 
 选题生成规则：
+
 - 每个角度必须是不同的切入点（理论分析 / 案例分析 / 实证研究 / 比较研究 / 应用研究）
 - 每个选题必须具体、可操作，不能是空泛标题
 - 选题难度应与本科课程论文匹配
 - 必须考虑文献可得性（过于冷门的选题会导致文献采集失败）
 
 输出格式：
+
 ```
 ## 选题方案
 
@@ -229,18 +246,21 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 用户确认选题后，立即运行文献采集脚本。
 
 采集流程：
+
 1. 根据选题提取 3-5 组关键词（中文 + 英文）
 2. 调用 `tools/literature_scraper.py` 逐关键词搜索
 3. 脚本返回结果后，AI 进行去重和相关性初筛
 4. 生成文献核验清单展示给用户
 
 文献采集规则：
+
 - 中文文献目标：5-8 篇（优先近 5 年核心期刊）
 - 英文文献目标：2-3 篇（优先有 DOI 的期刊论文）
 - 总数目标：8-12 篇
 - 不达目标时如实告知，不编造
 
 文献核验清单展示格式：
+
 ```
 | # | 标题 | 作者 | 年份 | 来源 | 可信度 | 相关性 |
 |---|------|------|------|------|--------|--------|
@@ -255,6 +275,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 基于选题和文献池，生成论文大纲。
 
 课程论文标准结构：
+
 1. 摘要 + 关键词
 2. 引言
 3. 正文（2-3 章，根据字数调整）
@@ -262,6 +283,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 5. 参考文献
 
 大纲输出格式：
+
 ```
 ## 论文大纲
 
@@ -307,6 +329,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 按章节顺序逐一写作。每写完一章统计字数，超出预算则压缩。**写完所有正文后，立即自动扫描并生成全部图表（不询问用户）。**
 
 写作规则：
+
 - 每引用一个观点或数据，必须标注文献编号，如 `[1]`
 - 正文语言避免 AI 套话（"具有重要意义""实现了良好效果"等）
 - 优先用文献中的具体观点和数据，不写空泛结论
@@ -315,6 +338,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 - 正文中用 `<!-- chart: 图表描述 -->` 标记需要插图的位置，写完正文后自动生成全部图表并替换占位符
 
 对应资源：
+
 - `prompts/chapter_writer.md` — 章节写作 prompt
 
 ### 7. 图表生成
@@ -322,12 +346,14 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 正文中需要图表的地方，**自动判断并生成**科研级 HTML 图表文件，再用 Playwright 渲染为 PNG 插入。**全程自动完成，不许询问用户是否生成、生成什么类型、放在哪里。**
 
 图表类型：
+
 - 数据对比图（柱状图、折线图）
 - 流程图
 - 理论框架图
 - 表格（复杂表格）
 
 图表规则：
+
 - 每篇文章至少 3 张图或表（Hard Gate），在此基础上每 1500-2000 字再增配 1 张，写完正文后自动扫描需要插图的位置并全部生成
 - 图题置于图下方，表题置于表上方
 - 图表必须与正文内容直接相关
@@ -335,6 +361,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 - 图表类型和内容由 AI 根据上下文自行判断决定，不询问用户
 
 对应资源：
+
 - `prompts/chart_designer.md` — 图表设计 prompt
 - `tools/render_html_chart.py` — HTML 渲染脚本
 
@@ -343,14 +370,18 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 生成格式规范的 `.docx` 文件。
 
 **如果用户提供了模板/格式要求：**
+
 - 必须使用 `analyze_template.py` 输出的样式配置
 - 模板提取的样式已内置在 `generate_paper_docx.py` 中，通过 `-i` 参数指定图表目录：
+
   ```
-  python tools/generate_paper_docx.py paper.md -o 论文标题.docx -i charts/
+  uv run python tools/generate_paper_docx.py paper.md -o 论文标题.docx -i charts/
   ```
+
 - 不得退回默认格式
 
 **如果用户使用默认格式：**
+
 - 默认格式如下：
   - 论文标题：黑体二号加粗居中
   - 摘要/Abstract 标题：黑体小四加粗居中
@@ -364,6 +395,7 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
   - 表题：宋体五号居中加粗
 
 对应资源：
+
 - `tools/generate_paper_docx.py` — DOCX 生成脚本
 - `tools/analyze_template.py` — 模板格式提取脚本
 - `prompts/format_extractor.md` — 格式提取 prompt
@@ -374,11 +406,13 @@ C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 当用户选择 PDF 产出时，走三步（详见 `references/latex_template_guide.md`）：
 
 **步骤 1：md → LaTeX 正文**
+
 ```
-python tools/md_to_latex.py <论文终稿.md> -o body.tex \
+uv run python tools/md_to_latex.py <论文终稿.md> -o body.tex \
     --profile latex_profile.json --refs literature.json \
     --charts-dir charts/ --bib-out refs.bib --report convert_report.json
 ```
+
 转换器按 profile 自动处理：章节映射、剥离 md 标题序号（模板自动编号时）、
 图题在下/表题在上、按模板宏包能力降级表格样式、`[1]/[2-4]/[1,3]` → `\cite{}`、
 LaTeX 特殊字符转义（`%` 是最高频事故点）、按模板有无 bib 机制决定 `.bib` 还是内嵌 `thebibliography`。
@@ -387,22 +421,26 @@ LaTeX 特殊字符转义（`%` 是最高频事故点）、按模板有无 bib �
 残留的 `<!-- chart: -->` 占位符、引用编号在文献表里不存在、md 文献条目与结构化元数据对不上。
 
 **步骤 2：组装 + 编译**
+
 ```
-python tools/build_paper_pdf.py --body body.tex --profile latex_profile.json \
+uv run python tools/build_paper_pdf.py --body body.tex --profile latex_profile.json \
     --report convert_report.json --bib refs.bib \
     -o "论文标题.pdf" --build-report build_report.json
 ```
+
 - 模板可用时注入外壳（保留封面/声明/目录，整段替换示例正文与示例摘要）；
   不可用时用 `assets/default_paper.tex` 骨架并在 stderr 明确打印 `[FALLBACK]` 原因
 - 缺图片会自动补占位图并重编（避免 graphicx 只警告、图位静默留空），但**必须补回真实图表后重编**
 - 编译失败会自动回退骨架重试；两者都失败则退出码 3 并保留 `paper.tex` 与 `.log`
 
 **步骤 3：交付前检查 `build_report.json`**
+
 - `success: true`、`pages` 正常、`compile.missing_deps` 为空、`compile.undefined_refs` 为空
 - `compile.filled_placeholders` 非空 ⇒ 有占位图，必须补回真实图表后重编
 - `mode: skeleton` ⇒ 未用上用户模板，交付时必须说明原因
 
 对应资源：
+
 - `tools/analyze_latex_template.py` — LaTeX 模板分析（引擎/宏包/注入点/排版参数/编译探测）
 - `tools/md_to_latex.py` — Markdown → LaTeX 正文
 - `tools/build_paper_pdf.py` — 外壳注入 + latexmk 编译 + 回退
@@ -413,6 +451,7 @@ python tools/build_paper_pdf.py --body body.tex --profile latex_profile.json \
 ### 9. 最终检查
 
 交付前检查：
+
 - 所有参考文献是否来自爬虫真实输出
 - 正文引用编号是否与参考文献列表一一对应
 - 文献核验清单中是否有"不可信"条目
@@ -421,17 +460,18 @@ python tools/build_paper_pdf.py --body body.tex --profile latex_profile.json \
 - `.docx` 文件是否真实生成（Word 链路）
 - **LaTeX 链路**：`build_report.json` 的 `success` 是否为 `true`、`missing_deps` / `undefined_refs` 是否为空、有无占位图、`.tex` 源文件是否与 PDF 一起交付
 - 文件名是否为论文标题
-- **降AI检查是否通过**（`python tools/humanize_check.py <paper.md> --markdown`）
+- **降AI检查是否通过**（`uv run python tools/humanize_check.py <paper.md> --markdown`）
 
 ### 10. 降AI检查（humanize_check）
 
 在降重处理之前，对完整论文运行降AI验证：
 
 ```bash
-python tools/humanize_check.py paper.md --markdown --write
+uv run python tools/humanize_check.py paper.md --markdown --write
 ```
 
 检查通过标准：
+
 - ✅ 句长标准差 ≥ 6
 - ✅ 连接词密度 ≤ 8/千字
 - ✅ 无红色高风险词（`references/ai_vocabulary_blacklist.md`）
@@ -440,6 +480,7 @@ python tools/humanize_check.py paper.md --markdown --write
 - ✅ 无术语保护违规（`references/term_whitelist.md`）
 
 如果未通过：
+
 1. 根据 `humanize_report.md` 中的问题列表逐项修复
 2. 对问题段落使用 `prompts/humanize_pass.md` 的改写流程（含模式扫描 + 句式多样化 + 语气自然化 + 逻辑人性化）
 3. 重新运行检查直到通过
@@ -452,12 +493,14 @@ python tools/humanize_check.py paper.md --markdown --write
 降AI检查通过后，对论文运行降重处理（参考 `prompts/plagiarism_pass.md`）：
 
 处理重点：
+
 1. **标准定义段**：重新组织语序，增加上下文特定说明
 2. **文献综述段**：分类归纳，融入个人视角，避免逐一罗列
 3. **方法描述段**：增加"为什么选择此方法"的动机说明
 4. **结论总结段**：用具体发现替换泛泛总结
 
 处理规则：
+
 - 应用表述角度转换（"是什么" → "为什么"；"做什么" → "怎么做"）
 - 应用引用归并（多源合并引用，按主题分类）
 - 全程保护专业术语（对照 `references/term_whitelist.md`）
@@ -469,18 +512,20 @@ python tools/humanize_check.py paper.md --markdown --write
 每次运行产生的中间文件必须集中管理，不得散落在用户模板文件所在目录。
 
 **目录规则：**
+
 - 所有中间产物写入 `papers/{YYYYMMDD}_{序号}/` 目录
 - 序号从 `001` 起递增，同一次运行共享同一序号
 - 示例：`papers/20260621_001/`
 
 **命名规则：**
+
 - 所有文件使用 `{YYYYMMDD}_{序号}_{描述}.{ext}` 前缀
 - 示例：`20260621_001_style_profile.json`、`20260621_001_literature_cn.json`
 
 **中间产物清单（必须归档到 papers/）：**
 
 | 产物 | 命名示例 | 产生阶段 |
-|------|---------|---------|
+| ------ | --------- | --------- |
 | 样式配置 JSON | `{ts}_style_profile.json` | format_confirmed |
 | 模板文本 TXT（脚本自动导出） | `{ts}_template_text.txt` | format_confirmed |
 | 中文文献 JSON | `{ts}_literature_cn.json` | literature_collected |
@@ -495,6 +540,7 @@ python tools/humanize_check.py paper.md --markdown --write
 | **编译报告 JSON** | `{ts}_build_report.json` | pdf_built |
 
 **不清扫的文件（与中间产物一起保留在 papers/ 目录）：**
+
 - 论文 `.md` 终稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.md`
 - 论文 `.docx` 终稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.docx`
 - 论文 `.pdf` 成稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.pdf`
@@ -515,7 +561,7 @@ python tools/humanize_check.py paper.md --markdown --write
 
 **Step 1：读取文档**
 
-- .docx 文件：`python tools/docx_io.py read "<路径>"`
+- .docx 文件：`uv run python tools/docx_io.py read "<路径>"`
 - 粘贴文本：直接使用
 
 **Step 2：5 维度语义分析**
@@ -528,6 +574,7 @@ python tools/humanize_check.py paper.md --markdown --write
 **Step 3：输出检测报告**
 
 输出结构化 Markdown 检测报告，包含：
+
 - 整体 AIGC 风险评分 + 维度评分表
 - 段落级分析（每段标注评分、问题、风险原因）
 - 改写优先级排序表 + 总体建议
@@ -535,6 +582,7 @@ python tools/humanize_check.py paper.md --markdown --write
 **Step 4：询问用户**
 
 使用 AskUserQuestion 询问后续操作：
+
 1. "保存报告为 Markdown 文件"
 2. "对高风险段落进行改写并输出 .docx"
 3. "仅查看改写建议（不修改文档）"
@@ -542,10 +590,11 @@ python tools/humanize_check.py paper.md --markdown --write
 **Step 5：改写并输出（仅当用户选择时）**
 
 改写遵循 7 大技法优先级（详见 `references/rewrite_methods.md`）：
+
 1. 句式重构 → 2. 破解AI模板 → 3. 论证补全 → 4. 概念具象 → 5. 困惑度提升 → 6. 风格断裂 → 7. 添加主语
 
-使用 `python tools/docx_io.py replace` 逐段替换，保留原始格式。
-改写后运行 `python tools/humanize_check.py <file> --markdown` 验证通过。
+使用 `uv run python tools/docx_io.py replace` 逐段替换，保留原始格式。
+改写后运行 `uv run python tools/humanize_check.py <file> --markdown` 验证通过。
 
 产物归档到 `papers/{YYYYMMDD}_{序号}/` 目录。
 
@@ -571,6 +620,7 @@ python tools/humanize_check.py paper.md --markdown --write
 ## Resource Map
 
 ### Prompts
+
 - `prompts/format_extractor.md` — 格式提取（DOCX 模板 / LaTeX 模板 / 文字描述）
 - `prompts/topic_selector.md` — 选题生成
 - `prompts/outline_builder.md` — 大纲构建
@@ -580,6 +630,7 @@ python tools/humanize_check.py paper.md --markdown --write
 - `prompts/detection_pass.md` — AIGC 检测 + 7 技法改写 Prompt（新增）
 
 ### Tools
+
 - `tools/analyze_template.py` — DOCX 模板格式提取
 - `tools/analyze_latex_template.py` — LaTeX 模板分析（引擎/宏包/注入点/排版参数/编译探测）
 - `tools/md_to_latex.py` — Markdown → LaTeX 正文片段
@@ -591,13 +642,24 @@ python tools/humanize_check.py paper.md --markdown --write
 - `tools/generate_paper_docx.py` — DOCX 成稿（Markdown→DOCX 整体转换）
 - `tools/docx_io.py` — DOCX 段落级读写替换（新增：检测/改写模式用）
 
-运行时依赖：Word 链路需 `requirements.txt`（python-docx / Pillow / playwright）；
-LaTeX 链路额外需系统安装 TeX Live（含 `latexmk`、`ctex`、`xeCJK`，页数统计用 `pdfinfo`）。
+**运行环境（首次使用必做）**：所有 `tools/` 命令都在**本 skill 仓库根目录**下用 `uv run` 执行。
+
+```bash
+uv sync                                  # 建/更新 .venv（必做）
+uv run playwright install chromium       # 图表渲染需浏览器（uv sync 不含浏览器）
+```
+
+- `pyproject.toml` 为依赖真源，`uv.lock` 锁定版本，`uv sync` 生成 `.venv/`
+- `requirements.txt` 是 `uv export` 产物（供不用 uv 的人 `pip install -r`），**不要手工编辑**
+- `uv run` 会向上查找 `pyproject.toml`，故在 `papers/<某目录>/` 子目录内执行同样有效
+- LaTeX 链路额外需系统安装 TeX Live（含 `latexmk`、`ctex`、`xeCJK`，页数统计用 `pdfinfo`）
 
 ### Assets
+
 - `assets/default_paper.tex` — LaTeX 内置兜底骨架（占位符由 build 脚本替换）
 
 ### References
+
 - `references/course_paper_structure.md` — 课程论文结构模板
 - `references/default_format.md` — 默认格式规范（Word）
 - `references/default_latex_format.md` — LaTeX 默认格式规范 + 字号/常见坑速查
@@ -612,6 +674,7 @@ LaTeX 链路额外需系统安装 TeX Live（含 `latexmk`、`ctex`、`xeCJK`，
 - `references/detection_principles.md` — AIGC 检测原理知识库
 
 ### Humanize（降AI + 降重）
+
 - `prompts/humanize_constraints.md` — D0-D6 降AI写作约束（含三级词汇体系）
 - `prompts/humanize_pass.md` — 独立降AI改写 Prompt（含模式扫描 + 句式/语气/逻辑三维改写）
 - `prompts/plagiarism_pass.md` — 独立降重改写 Prompt（含深度语义改写 + 表述角度转换）
