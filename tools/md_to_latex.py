@@ -237,6 +237,10 @@ class MarkdownToLatex:
         self.auto_number = bool((styles.get("heading1") or {}).get("auto_number", True))
 
         self.warnings: list[str] = []
+        # notes 与 warnings 分开：notes 是「本模板下必然如此」的说明（如 bibtex 重排
+        # 编号），warnings 是稿件里真问题。混在一起会让退出码 3 失去意义 ——
+        # bibtex 模式下每条都必然至少 1 条 note，警告就永远淹没在噪声里。
+        self.notes: list[str] = []
         self.abstract_parts: list[str] = []
         self.keywords = ""
         self.title: str | None = None
@@ -304,10 +308,20 @@ class MarkdownToLatex:
                     nums.append(num)
                 else:
                     return m.group(0)
-            # 不在文献表里的方括号数字（如 [2024] 年份）原样保留
-            if not nums or not all(n in self.ref_numbers for n in nums):
+            # 方括号数字既可能是引用，也可能是年份/版本号（如 [2024]）。
+            # 判据是量级：落在本文文献表合理序号范围内的，视为引用意图。
+            # 范围内但文献表里没有的，必须报警而不能原样放过 —— 那样 PDF 里会出现
+            # 一个排版正常、指向空处的 [9]（「安静的错稿」）。
+            if not nums or not all(1 <= n <= self.citation_ceiling() for n in nums):
                 return m.group(0)
+            # 没有参考文献表时无从判断是漏引还是正文里的方括号数字，不报
+            if self.ref_numbers:
+                for n in (n for n in nums if n not in self.ref_numbers):
+                    if n not in self.undefined_cites:
+                        self.undefined_cites.append(n)
             for n in nums:
+                if n not in self.ref_numbers:
+                    continue
                 self.cite_used[n] = self.cite_used.get(n, 0) + 1
                 self.stats["citations"] += 1
             keys = ",".join(self.key_for(n) for n in nums)
@@ -384,6 +398,7 @@ class MarkdownToLatex:
         real_path, tex_path = found
 
         caption = strip_caption_number(alt) if alt.strip() else ""
+        self.check_caption_present(caption, is_table)
         width = self.image_width(real_path, is_table)
         env = "table" if is_table else "figure"
         # 表题在上、图题在下（与 DOCX 链路一致）
@@ -400,7 +415,33 @@ class MarkdownToLatex:
         return "\n".join(parts)
 
     # -- 表格 --------------------------------------------------------------
+    def citation_ceiling(self) -> int:
+        """方括号数字「还算引用序号」的上限。
+
+        用来把 [2024] 这类年份挡在外面：文献表只有 7 条时，[9] 是漏引（要报警），
+        [2024] 只能在说年份（原样保留）。单纯用「在文献表里 / 不在」做判据会把
+        两者混为一谈，漏引就永远检不出来。
+        """
+        if not self.ref_numbers:
+            return 30
+        return max(2 * max(self.ref_numbers), 30)
+
+    def check_caption_present(self, caption: str, is_table: bool) -> None:
+        """学术论文里无题注的浮动体是缺陷，不能安静输出。
+
+        md 方谷里图/表题各自写在一行（`![图1 图题](path)` / 表格上一行
+        `**表 1 标题**`）。缺了就是缺了 —— 交一张裸表比报错难发现得多。
+        """
+        if caption:
+            return
+        kind = "表格" if is_table else "图片"
+        self.warnings.append(
+            kind + "缺少题注：图片写在 ![]() 的 alt 里，表格写在表格上一行"
+            "（**表 N 标题**），否则 PDF 里这个" + kind + "没有题注"
+        )
+
     def render_table(self, rows: list[str], caption: str = "") -> str:
+        self.check_caption_present(caption, True)
         header = [c.strip() for c in rows[0].strip("|").split("|")]
         data_start = 1
         aligns = ["l"] * len(header)
@@ -762,24 +803,23 @@ class MarkdownToLatex:
         self._check_ref_metadata()
 
         if self.bib_mode == "bibtex":
-            self.warnings.append(
+            self.notes.append(
                 "走 refs.bib：正文编号将由模板的 \\bibliographystyle 重排，"
                 "PDF 里的编号可能不等于 md 里的 [n] 顺序（配对关系不受影响，"
                 "参考文献列表顺序会同步改变）"
             )
             if self.multi_key_cites and not self.caps.get("cite"):
-                self.warnings.append(
+                self.notes.append(
                     "模板未加载 cite 宏包，多文献引用不会升序排列"
                     "（实测渲染成 [3, 2] 这类降序）；GB/T 7714 要求升序，"
                     "建议模板改用 gbt7714 样式或加载 cite/natbib 宏包"
                 )
 
-        undefined = sorted(set(self.cite_used) - self.ref_numbers)
-        if undefined:
-            self.undefined_cites = undefined
+        if self.undefined_cites:
             self.warnings.append(
-                "正文引用了文献表中不存在的编号: {}（会渲染成 ??）".format(
-                    ", ".join(str(u) for u in undefined))
+                "正文引用了文献表中不存在的编号: {}（PDF 里会原样渲染成 [n]，"
+                "看起来完全正常但指向空处）".format(
+                    ", ".join(str(u) for u in sorted(self.undefined_cites)))
             )
         unused = sorted(self.ref_numbers - set(self.cite_used))
         if unused:
@@ -807,6 +847,7 @@ def report_of(converter: MarkdownToLatex, md_path: Path, body_path: Path) -> dic
         "refs": converter.refs,
         "cite_used": {converter.key_for(k): v for k, v in sorted(converter.cite_used.items())},
         "undefined_citations": converter.undefined_cites,
+        "notes": converter.notes,
         "warnings": converter.warnings,
         "stats": converter.stats,
     }
@@ -901,10 +942,15 @@ def main() -> int:
     ))
     print("     模板自动编号：{}".format("是，已剥离 md 标题序号" if converter.auto_number else "否，保留 md 序号"))
 
+    if converter.notes:
+        print(f"\n[NOTE] {len(converter.notes)} 条说明（本模板下必然如此，不影响交付）：")
+        for note in converter.notes:
+            print("  - " + note)
+
     if converter.warnings:
         print(f"\n[WARN] {len(converter.warnings)} 条警告：", file=sys.stderr)
         for w in converter.warnings:
-            print(f"  - {w}", file=sys.stderr)
+            print("  - " + w, file=sys.stderr)
         return 3
     return 0
 
