@@ -1,10 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/DetachHead/basedpyright/main/pyproject.schema.json",
-  "include": ["tools"],
+  "include": ["tools", "tests"],
   "exclude": [
     "**/__pycache__",
     "papers",
     "tests/fixtures"
   ],
+  "extraPaths": ["tools"],
   "reportUnusedCallResult": "none"
 }
