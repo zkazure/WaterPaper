@@ -77,7 +77,21 @@
 `partial` 不等于模板废掉。但**缺失的 `.bib` 不能自动补占位**：空 `.bib` 会让所有
 引用静默渲染成 `[?]`，比编译失败更隐蔽。
 
-### 5. 引擎推断
+### 5. 正文浮动体会漂进参考文献页
+
+实测（8 页样本）：参考文献标题独占一页时，LaTeX 把正文末尾的图浮动到了该页，
+参考文献列表被图从中间切断（`[1][2]` / 图 2 / `[3]`）。PDF 里就是一张图插在
+参考文献列表中。
+
+处理：在参考文献机制前插 `\clearpage`（不需要 `placeins` 宏包）把挂起浮动体
+先落定。两个细节：
+
+- 插入点只能在 `\begin{document}` **之后**找。biblatex 的 `\addbibresource`
+  在导言区，按全文搜索会把 `\clearpage` 插进导言区，直接把文档改坏。
+- “模板已清过页”只能看**紧邻参考文献的那一行**。封面/摘要之后的 `\newpage`
+  不 flush 正文末尾浮动体，拿它当已清页会漏插。
+
+### 6. 引擎推断
 
 优先级：`% !TEX program = xelatex` magic comment → `CJKutf8` 宏包（→ pdflatex）→
 `ctex`/`xeCJK`/`fontspec`/`unicode-math`/`polyglossia`（→ xelatex）→ 文档类名
