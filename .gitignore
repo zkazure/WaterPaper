@@ -21,6 +21,12 @@ env/
 .DS_Store
 Thumbs.db
 
+# 本地工作笔记（不进仓库）
+plan.md
+
+# 工具缓存
+.ruff_cache/
+
 # Environment
 .env
 .env.local
