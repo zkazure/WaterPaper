@@ -342,9 +342,12 @@ def _extract_template_formats(tdoc):
     # Ensure body exists (use most common small size)
     if "body" not in fmt and sorted_sizes:
         # Find the smallest size group with the most paragraphs
+        # 并列时必须取更小字号：原来的 key 只有 -count，并列时稳定排序保留的是
+        # 输入顺序（字号降序）里的更大字号，正文会被套成上一级标题的字号
+        # （实测 12pt 正文变成 14pt）。
         body_candidates = sorted(
             [(s, p) for s, p in sorted_sizes if p["size_pt"] <= 14],
-            key=lambda x: -x[1]["count"]
+            key=lambda x: (-x[1]["count"], x[0])
         )
         if body_candidates:
             fmt["body"] = body_candidates[0][1]
