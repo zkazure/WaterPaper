@@ -207,6 +207,44 @@ def strip_bib_mechanism(tail: str) -> tuple[str, list[str]]:
     return out, removed
 
 
+# 注意：raw 字符串里词边界是 \b（写成 \\b 就变成「字面反斜杠 + b」，整条正则永不匹配）
+BIB_START_RE = re.compile(
+    # [ \t]* 而非 \s*：\s 会吞换行，插入点会落到前一空行上
+    r"^[ \t]*(?:\\(?:bibliographystyle|bibliography|printbibliography)\b"
+    r"|\\addbibresource\b"
+    r"|\\begin\{thebibliography\})",
+    re.MULTILINE,
+)
+# 只认「紧邻参考文献前一行」的清页命令：正文之前（封面/摘要之后）的 \newpage
+# 不 flush 正文末尾的浮动体，拿它当已清页会漏插。
+PAGE_CLEAR_RE = re.compile(
+    r"\\(?:clearpage|cleardoublepage|newpage)\s*(?:\[[^\]]*\])?\s*$"
+)
+
+
+def flush_floats_before_bibliography(paper: str) -> tuple[str, bool]:
+    r"""在参考文献之前插一个 \clearpage，把正文挂起的浮动体先落定。
+
+    实测（8 页样本）：参考文献标题独占一页时，正文末尾的图会被 LaTeX 浮动到该页，
+    参考文献列表被图从中间切断（[1][2] / 图 2 / [3]）。\clearpage 不需要 placeins
+    宏包；模板自己已在参考文献前清过页就跳过，不重复插。
+
+    只在 \begin{document} 之后找插入点：biblatex 的 \addbibresource 在导言区，
+    按全文搜索会把 \clearpage 插进导言区，直接把文档改坏。
+    """
+    doc_start = paper.find(r"\begin{document}")
+    if doc_start < 0:
+        return paper, False
+    m = BIB_START_RE.search(paper, doc_start)
+    if m is None:
+        return paper, False
+    prefix = paper[:m.start()].rstrip()
+    last_line = prefix.rsplit("\n", 1)[-1].strip() if prefix else ""
+    if PAGE_CLEAR_RE.match(last_line):
+        return paper, False
+    return paper[:m.start()] + "\\clearpage\n" + paper[m.start():], True
+
+
 def bib_target_filename(tail: str) -> str | None:
     r"""读出模板要求的 .bib 文件名（\bibliography{X} / \addbibresource{X.bib}）。"""
     for cmd in ("bibliography", "addbibresource"):
@@ -460,8 +498,13 @@ def assemble_from_shell(
                 "参考文献可能不会渲染"
             )
 
-    return head + "\n" + body.rstrip("\n") + "\n\n" + tail, bib_name
-
+    paper = head + "\n" + body.rstrip("\n") + "\n\n" + tail
+    paper, flushed = flush_floats_before_bibliography(paper)
+    if flushed:
+        notes.append(
+            r"已在参考文献前插入 \clearpage（否则正文末尾的图会被浮动进参考文献页）"
+        )
+    return paper, bib_name
 
 def assemble_from_skeleton(
     profile: dict[str, Any],
@@ -505,6 +548,11 @@ def assemble_from_skeleton(
                 "骨架占位符 " + key + " 出现 " + str(count) + " 次（应为 1 次）"
             )
         text = text.replace(key, value)
+    text, flushed = flush_floats_before_bibliography(text)
+    if flushed:
+        notes.append(
+            r"已在参考文献前插入 \clearpage（否则正文末尾的图会被浮动进参考文献页）"
+        )
     notes.append("已使用内置骨架 assets/default_paper.tex")
     return text
 

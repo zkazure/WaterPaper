@@ -479,6 +479,77 @@ def test_strip_bib_mechanism_removes_all_forms():
     assert len(removed) == 4
 
 
+def shell_profile(start: int, stop: int) -> dict[str, Any]:
+    """最小可用的外壳 profile（只给 assemble_from_shell 必需字段）。"""
+    return {
+        "injection": {"start_line": start, "stop_line": stop,
+                      "keeps_template_bibliography": True},
+        "capabilities": {},
+        "styles": {},
+    }
+
+
+SYNTH_TEMPLATE = r"""\documentclass{ctexart}
+\usepackage{biblatex}
+\addbibresource{refs.bib}
+\begin{document}
+\maketitle
+\section{占位}
+\printbibliography
+\end{document}"""
+
+
+def assemble_synthetic(template: str, body: str, report: dict[str, Any] | None = None):
+    lines = template.split("\n")
+    stop = next(i + 1 for i, line in enumerate(lines)
+                if line.strip() and r"\section{占位}" in line)
+    notes: list[str] = []
+    return bpp.assemble_from_shell(
+        shell_profile(stop, stop), template, body,
+        report or {"bib_mode": "bibtex"}, notes) + (notes,)
+
+
+def test_clearpage_flushes_floats_before_bibliography(full_profile):
+    r"""回归：参考文献标题独占一页时，正文末尾的图会被 LaTeX 浮动进该页，
+    参考文献列表被图从中间切断（实测：p5 [1][2] / p6 图 2 / p7 [3]）。
+    """
+    report = {"title": "标题", "abstract": "摘要。", "keywords": "甲",
+              "bib_mode": "bibtex"}
+    notes: list[str] = []
+    paper, _ = bpp.assemble_from_shell(
+        full_profile, FULL_TEMPLATE.read_text(encoding="utf-8"),
+        r"\section{引言}" + "\n\n正文。", report, notes)
+    assert r"\clearpage" + "\n" + r"\bibliographystyle{plain}" in paper
+    assert any("浮动" in n for n in notes)
+
+
+def test_clearpage_never_lands_in_the_preamble():
+    r"""回归：biblatex 的 \addbibresource 在导言区。若按全文找插入点，
+    \clearpage 会被插到 \documentclass 之后、\begin{document} 之前，直接改坏文档。"""
+    paper, _, _ = assemble_synthetic(SYNTH_TEMPLATE, "正文。")
+    preamble = paper[:paper.index(r"\begin{document}")]
+    assert r"\clearpage" not in preamble
+    assert r"\addbibresource{refs.bib}" in preamble     # 导言区保持原样
+    assert r"\clearpage" + "\n" + r"\printbibliography" in paper
+
+
+def test_clearpage_is_not_duplicated_when_template_already_clears():
+    """模板自己已经清过页就不要再插一个（不改变模板的分页意图）。"""
+    template = SYNTH_TEMPLATE.replace(
+        r"\printbibliography", r"\clearpage" + "\n" + r"\printbibliography")
+    paper, _, _ = assemble_synthetic(template, "正文。")
+    assert paper.count(r"\clearpage") == 1
+
+
+def test_skeleton_also_flushes_floats():
+    report = {"title": "标题", "abstract": "摘要。", "keywords": "甲",
+              "bib_mode": "bibtex"}
+    notes: list[str] = []
+    paper = bpp.assemble_from_skeleton(
+        minimal_profile(), "正文。", report, SKELETON, notes)
+    assert r"\clearpage" + "\n" + r"\bibliographystyle{plain}" in paper
+
+
 def test_bib_target_filename_reads_template_declaration():
     assert bpp.bib_target_filename(r"\bibliography{refs}") == "refs.bib"
     assert bpp.bib_target_filename(r"\addbibresource{my.bib}") == "my.bib"
