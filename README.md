@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  一句话出选题 → 自动查找<strong>真实文献</strong> → 调节<strong>标准格式</strong> → 降低<strong>AI率</strong> → 降低<strong>查重率</strong> → 交付 .docx<br/>
+  一句话出选题 → 自动查找<strong>真实文献</strong> → 调节<strong>标准格式</strong> → 降低<strong>AI率</strong> → 降低<strong>查重率</strong> → 交付 .docx / .pdf<br/>
   不是真的水——而是把体力活自动化，让你的时间用在更有价值的事情上。
 </p>
 
@@ -63,6 +63,28 @@ AI agent会自动完成配置
 
 AI 会走完整流程：**要模板 → 出选题 → 爬文献 → 出大纲 → 写正文 → 出图 → 交 .docx**
 
+也支持学校的 LaTeX 模板，直接产出 PDF（同时交付可编译的 .tex 源）：
+
+```
+用这个skill帮我写一篇关于移动通讯技术的期末论文，4000 字，用学校的 LaTeX 模板 template.tex，产出 PDF
+```
+
+流程与 Word 链路完全一致（选题/文献/写作/降AI/降重共用同一套中继），只在
+格式提取与成稿两端不同：
+
+```
+template.tex → 模板分析（引擎/宏包/注入点/排版参数/编译探测）
+             → 注入正文外壳（保留封面、声明页、目录）
+             → latexmk 编译 → 论文.pdf + paper.tex
+```
+
+模板残缺（没有 `\begin{document}`、找不到注入点、编译不过）时自动回退内置骨架，
+并**明确告知你未用上模板及其原因**，不会假装套用了模板。
+
+> 前置条件：PDF 链路需本机安装 TeX Live（含 `latexmk`、`ctex`、`xeCJK`）。
+> macOS/Linux 可用 `conda install -c conda-forge texlive-core` 或 `apt install texlive-xetex texlive-lang-chinese`
+> 快速装上。
+
 ## 为什么你需要这个
 
 期末周，N 篇课程论文压过来。每篇的流程都一样：
@@ -75,7 +97,7 @@ AI 会走完整流程：**要模板 → 出选题 → 爬文献 → 出大纲 �
 |------|----------|-------------|------------|
 | 选题 | 绞尽脑汁想 1 个 | AI 生成选题，但无真实文献支撑 | 一句话出 5 角度 × 2 选题 = 10 个 |
 | 文献 | 翻 CNKI、万方，复制粘贴 | ❌ 编造参考文献，标题作者看似真实 | 多源爬虫自动抓取，去重去假 |
-| 格式 | 对着模板一行行调 | 需手动描述格式，无法精确复刻 | 上传 .docx 模板 → 自动提取 → 严格复刻 |
+| 格式 | 对着模板一行行调 | 需手动描述格式，无法精确复刻 | 上传 .docx / .tex 模板 → 自动提取 → 严格复刻 |
 | 图表 | 用 Excel 画、截图、插入 | 无法生成或生成简陋 | HTML 渲染科研级 SVG 图表 → 自动插 |
 | 降AI | 硬着头皮改套话、调句式 | 无降AI能力 | D0-D7 七维约束 + PaperPass 五模式扫描 + 9 大改写技法 |
 | 降重 | 手动改写重复段落 | 无降重能力 | 深度语义改写 + 表述角度转换 + 引用归并 |
@@ -142,8 +164,7 @@ AI 会走完整流程：**要模板 → 出选题 → 爬文献 → 出大纲 �
 - **D7 并列必死**：知网/PaperPass 对并列结构极其敏感——"第一/第二/第三""首先/其次/最后"直接粉碎，改用碎片化断句和空行分段打断并列
 - 写作完成后自动运行 `humanize_check.py` 验证（含并列检测），不通过不交付
 
-**第二道：降重处理（深度语义改写）**
-- 标准定义段：重新组织语序，避免教科书式表述
+**第二道：降重处理（深度语义改写）**- 标准定义段：重新组织语序，避免教科书式表述
 - 文献综述段：分类归纳 + 多源归并引用，不做文献流水账
 - 方法描述段：增加"为什么选择此方法"的动机说明
 - 结论总结段：用具体发现替换泛泛总结
@@ -224,7 +245,7 @@ WaterPaper/
 ├── requirements.txt                  # Python 依赖
 │
 ├── prompts/                          # AI 提示词模板
-│   ├── format_extractor.md           #   格式提取（.docx 模板 & 文字描述）
+│   ├── format_extractor.md           #   格式提取（.docx / .tex 模板 & 文字描述）
 │   ├── topic_selector.md             #   5 角度 × 2 选题生成
 │   ├── outline_builder.md            #   大纲 + 字数预算 + 文献分配
 │   ├── chapter_writer.md             #   逐章写作 + 引用规则 + 降重约束
@@ -236,15 +257,23 @@ WaterPaper/
 │
 ├── tools/                            # Python 工具脚本
 │   ├── analyze_template.py           #   DOCX 模板格式分析器
+│   ├── analyze_latex_template.py     #   LaTeX 模板分析（注入点 / 编译探测）
+│   ├── md_to_latex.py                #   Markdown → LaTeX 正文片段
+│   ├── build_paper_pdf.py            #   外壳注入 + latexmk 编译 + 骨架回退
 │   ├── literature_scraper.py         #   多源文献爬虫（4 数据源）
 │   ├── render_html_chart.py          #   HTML → PNG 渲染（Playwright）
 │   ├── count_words.py                #   中英混合字数统计
 │   ├── generate_paper_docx.py        #   Markdown → DOCX（python-docx）
 │   └── humanize_check.py             #   降AI效果验证（三级词汇报告 + 密度/并列检测）
 │
+├── assets/                           # 内置资源
+│   └── default_paper.tex             #   LaTeX 兜底骨架（模板残缺时用）
+│
 └── references/                       # 参考规范
     ├── course_paper_structure.md     #   4 类学科论文结构模板
-    ├── default_format.md             #   GB/T 7714 默认格式规范
+    ├── default_format.md             #   GB/T 7714 默认格式规范（Word）
+    ├── default_latex_format.md       #   LaTeX 默认格式规范 + 字号速查
+    ├── latex_template_guide.md       #   LaTeX 模板处理指南（注入点规则 + 实测坑）
     ├── detection_principles.md       #   各平台AI检测原理分析
     ├── humanize_platforms.md         #   各平台降AI策略参考（含知网 v3.0）
     ├── humanize_matrix_template.md   #   humanize_matrix.md 模板

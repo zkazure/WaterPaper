@@ -27,3 +27,22 @@ Thumbs.db
 
 # Playwright
 .playwright/
+
+# LaTeX 编译中间产物
+# build_paper_pdf.py 默认会清理它们，此处兼作手编/中断后的兜底。
+# build/ 已在上面 Python 段声明。
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.blg
+*.bbl
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.run.xml
+*.bcf

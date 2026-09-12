@@ -2,10 +2,15 @@
 
 ## Overview
 
-本技能支持两大工作模式：
+本技能支持两大工作模式，写作模式可选两种产出格式：
 
 1. **论文写作模式**：从一句话出选题→真实文献采集→大纲→写作→图表→成稿，稳定生成格式规范、参考文献真实可核验的中文本科课程期末论文（3000-8000 字）
+   - **Word 链路**：`学校 .docx 模板` → 提样式 → `.docx`
+   - **LaTeX 链路**：`学校 .tex 模板` → 注入外壳 → `.pdf`（另交付 `.tex` 源）
 2. **检测/改写模式**：对已有论文进行 5 维度 AIGC 特征深度分析 + 7 大技法智能改写，降低 AI 检测率
+
+两条链路共用同一套中继（Markdown 终稿）与同一套降AI/降重流程，只在「格式提取」
+与「成稿」两端分开。收完需求后必须先问清用户要哪种产出。
 
 水论文不是真的水——而是让选题、文献、格式这些体力活自动化，把你的时间用在更有价值的事情上。
 
@@ -24,11 +29,13 @@
 2. "检测或改写已有论文（检测/改写模式）"
 
 核心差异化能力：
-1. **格式提取**：支持用户上传学校模板 `.docx` / `.doc` 或粘贴格式要求，自动提取并严格按模板排版（`.doc` 自动转换为 `.docx`）
+1. **格式提取**：支持用户上传学校模板 `.docx` / `.doc`（自动提样式并转为 `.docx`）
+   或 `.tex` LaTeX 模板（外壳注入，见 `references/latex_template_guide.md`），
+   也支持直接粘贴格式要求
 2. **选题工作流**：根据用户需求生成 5 角度 × 2 选题的结构化选题表
 3. **真实文献采集**：通过多源爬虫脚本抓取真实学术文献，杜绝编造
 4. **HTML 科研图表**：用 HTML/CSS/JS 绘制科研级别图表，Playwright 渲染为 PNG 插入正文
-5. **完整交付链**：格式 → 选题 → 文献 → 大纲 → 正文 → 图表 → DOCX，一步到位
+5. **完整交付链**：格式 → 选题 → 文献 → 大纲 → 正文 → 图表 → DOCX / PDF，一步到位
 6. **AIGC 检测+改写**：5 维度语义分析定位 AI 痕迹 + 7 大改写技法精准降AI（新增）
 
 ## Hard Gates
@@ -36,9 +43,11 @@
 以下规则不可违反：
 
 1. 用户提出论文需求后，必须先索要学校模板或格式要求：
-   - 路径示例：`D:\学校论文模板.docx`
+   - Word 模板：`D:\学校论文模板.docx` / `.doc`
+   - LaTeX 模板：`D:\学校模板\template.tex`（同目录的 `.cls` / `.sty` / `.bib` 会一并扫描）
    - 或粘贴：格式要求文字描述
    - 如果用户明确说"没有模板，用默认格式"，才能跳过格式提取
+   - **必须同时确认产出格式**：Word（`.docx`）还是 LaTeX（`.pdf`）？两者都没有指示时用 AskUserQuestion 问
 2. 收到模板或格式描述后，必须先完成格式提取和分析，回传给用户确认，才能进入选题。
 3. 选题阶段必须生成 5 个角度 × 每个角度 2 个选题 = 共 10 个选题，等待用户确认后才能继续。
 4. 选题确认后，必须先跑文献采集脚本，拿到真实文献列表，再生成大纲。禁止先写大纲再补文献。
@@ -47,13 +56,20 @@
 7. 正文中出现的数据、观点、引用必须标注对应文献编号，确保句句有出处。
 8. 图表必须通过 HTML 文件渲染为 PNG 插入，禁止使用 Mermaid/PlantUML 占位（课程论文不需要系统架构图）。每篇文章至少 3 张图或表，3000 字短文也须满足。图表生成全程自动完成：写完正文后自动扫描插图位置 → 自动判断图表类型 → 自动生成 HTML → 自动渲染 PNG → 自动插入正文。禁止询问用户"是否需要生成图表""生成什么类型""放在哪里"等问题。
 8a. 如果论文内容确实不适合配图（如纯理论思辨且无数据、无流程、无框架），可以跳过图表生成，但必须在最终交付时说明原因。
-9. 最终交付物必须包含 `.docx` 成稿，文件名使用论文标题。
+9. 最终交付物必须包含成稿：Word 链路为 `.docx`，LaTeX 链路为 `.pdf` + `.tex` 源文件；文件名使用论文标题。
 10. 如果爬虫脚本运行失败或返回空结果，必须如实告知用户，不得偷偷用 AI 编造文献替代。
-11. 生成 DOCX 时，如果用户提供了模板/格式要求，必须使用提取的样式配置，不能退回默认格式。
+11. 生成成稿时，如果用户提供了模板/格式要求，必须使用提取的样式配置，不能退回默认格式。
 12. 写作阶段必须应用 D0-D7 降AI约束（参考 `prompts/humanize_constraints.md`，默认 medium 档；参考 `references/ai_pattern_taxonomy.md` 了解 30+ AI 模式；参考 `references/paperpass_patterns.md` 了解 PaperPass 五大致命模式及破解实例；参考 `references/ai_vocabulary_blacklist.md` 了解三级词汇黑名单；参考 `references/term_whitelist.md` 了解术语保护白名单），不得使用禁用的 AI 高频连接词和套话。
 13. 成稿前必须运行 `python tools/humanize_check.py <paper.md> --markdown` 验证，句长标准差 ≥ 6、连接词密度 ≤ 8/千字、无红色高风险词、无术语保护违规 才能交付。
-14. 所有产物（中间产物 + 最终交付物）必须存放在 `papers/{YYYYMMDD}_{序号}/` 目录下，文件名统一使用 `{YYYYMMDD}_{序号}_{描述}.{ext}` 格式。包括论文 `.md` 终稿、`.docx` 成稿、图表 `.png` 渲染成品。禁止将任何产物散落在用户模板文件所在目录。
+14. 所有产物（中间产物 + 最终交付物）必须存放在 `papers/{YYYYMMDD}_{序号}/` 目录下，文件名统一使用 `{YYYYMMDD}_{序号}_{描述}.{ext}` 格式。包括论文 `.md` 终稿、`.docx` 成稿、`.pdf` 成稿、`.tex` 源文件、图表 `.png` 渲染成品。禁止将任何产物散落在用户模板文件所在目录。
 15. 降AI检查通过后，必须运行 `prompts/plagiarism_pass.md` 降重流程，对全文中高风险段落（标准定义、文献综述、方法描述、结论汇总）进行深度语义改写，确保通用知识表述不与现有文献雷同。
+
+**LaTeX 链路专属 Hard Gates：**
+
+21. LaTeX 链路必须先跑 `tools/analyze_latex_template.py` 并读取 `latex_profile.json`，确认 `usable_as_shell`；为 `false` 时必须走内置骨架回退，并**如实告知用户未使用其模板及原因**，禁止假装套用了模板。
+22. `tools/build_paper_pdf.py` 必须编译成功（`success: true`）才能进入 `delivery`；编译失败不得交付半成品 PDF。
+23. 交付前必须检查 `build_report.json`：`compile.missing_deps` 为空（缺图会静默留空图位）、`compile.undefined_refs` 为空（未解析引用会渲染成 `[?]`）、`compile.filled_placeholders` 里若有占位图必须补上真实图表后重编。
+24. 若分析器判定 `injection.is_guess: true`（未找到显式占位注释，锚点是推测的），必须核对 `removed_preview` 确认没有误删封面/声明/目录页后再编译。
 
 **检测/改写模式 Hard Gates：**
 
@@ -66,7 +82,7 @@
 ## Execution States
 
 ```
-intake → format_confirmed → topic_selection → topic_confirmed → literature_collected → outline_confirmed → writing → humanize_check → plagiarism_check → delivery
+intake → format_confirmed → topic_selection → topic_confirmed → literature_collected → outline_confirmed → writing → humanize_check → plagiarism_check → docx_built / pdf_built → delivery
 ```
 
 1. `intake` — 收集需求信息，确认课程、学科、字数，索要模板或格式要求
@@ -78,7 +94,8 @@ intake → format_confirmed → topic_selection → topic_confirmed → literatu
 7. `writing` — 正文写作中
 8. `humanize_check` — 降AI检查完成（句长/连接词/套话扫描通过）
 9. `plagiarism_check` — 降重处理完成（高风险区域深度语义改写通过）
-10. `delivery` — 已交付全部产物
+10. `docx_built` / `pdf_built` — 成稿生成完成（Word 链路为 `.docx`；LaTeX 链路为 `.pdf` + `.tex`，且 `build_report.json` 的 `success` 为 `true`）
+11. `delivery` — 已交付全部产物
 
 状态约束：
 - 未进入 `format_confirmed` 前，禁止生成选题（除非用户明确说用默认格式）
@@ -86,7 +103,8 @@ intake → format_confirmed → topic_selection → topic_confirmed → literatu
 - 未进入 `literature_collected` 前，禁止生成大纲
 - 未进入 `outline_confirmed` 前，禁止写正文
 - 未通过 `humanize_check` 前，禁止进入 `plagiarism_check`
-- 未通过 `plagiarism_check` 前，禁止进入 `delivery`
+- 未通过 `plagiarism_check` 前，禁止进入 `docx_built` / `pdf_built`
+- LaTeX 链路未进入 `pdf_built` 前，禁止进入 `delivery`
 - 若用户中途更换选题，状态退回 `topic_selection`
 - 若用户中途更换模板，状态退回 `format_confirmed`
 
@@ -126,13 +144,18 @@ intake → language_detected → doc_loaded → analysis_done → report_done �
 
 ### 2. 格式提取 (format_confirmed)
 
-用户首次提出需求时，必须主动索要格式输入（二选一）：
+用户首次提出需求时，必须主动索要格式输入与产出格式：
 
 ```
-我需要了解你学校的论文排版要求。你可以：
+我需要了解你学校的论文排版要求和产出格式。
 
-A. 提供学校论文模板文件，如：D:\论文模板.docx 或 D:\论文模板.doc
-B. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小四..."
+格式方面（三选一）：
+A. 提供 Word 论文模板，如：D:\论文模板.docx
+B. 提供 LaTeX 论文模板，如：D:\学校模板\template.tex
+C. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小四..."
+
+产出方面：你需要 Word（.docx）还是 PDF？
+（选 PDF 需要你本地（或本机）装了 TeX Live；选 PDF 时我会同时交付 .tex 源文件）
 
 如果没有模板也没有格式要求，我会使用默认格式。
 ```
@@ -150,8 +173,24 @@ B. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 3. 构建结构化样式配置
 4. 回传格式分析表给用户确认
 
+**如果用户提供了 .tex LaTeX 模板：**
+1. 运行：
+   ```
+   python tools/analyze_latex_template.py <模板路径> \
+       --json-out latex_profile.json --text-out template_text.txt
+   ```
+2. 读取 `latex_profile.json`：引擎、文档类、宏包能力、注入点与替换区间、排版参数、编译探测结论
+3. 读取 `template_text.txt`（带行号标注），由 LLM 核对注入区间是否合理、有无正则遗漏的格式特征
+4. **重点核对三件事**（详见 `references/latex_template_guide.md`）：
+   - `usable_as_shell` 是否为 `true`（否则必须回退内置骨架并告知用户）
+   - `injection.is_guess` 是否为 `true`（是则看 `removed_preview` 确认没误删封面/声明页）
+   - `styles.heading1.auto_number`（决定是否剥掉 md 标题里自带的"一、"序号）
+5. `compile_probe.status` 为 `partial`（仅缺附属文件）时模板仍可用，但**不得**用空 `.bib` 占位
+6. 将格式分析结果回传用户确认
+
 **如果用户说"没有模板，用默认格式"：**
-- 直接使用 `references/default_format.md` 的默认格式
+- Word 链路：直接使用 `references/default_format.md`
+- LaTeX 链路：直接使用 `assets/default_paper.tex`（规范见 `references/default_latex_format.md`）
 - 跳过格式提取，进入选题阶段
 
 格式分析回传必须包含：
@@ -330,6 +369,47 @@ B. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 - `prompts/format_extractor.md` — 格式提取 prompt
 - `references/default_format.md` — 默认格式规范
 
+### 8b. PDF 成稿（LaTeX 链路）
+
+当用户选择 PDF 产出时，走三步（详见 `references/latex_template_guide.md`）：
+
+**步骤 1：md → LaTeX 正文**
+```
+python tools/md_to_latex.py <论文终稿.md> -o body.tex \
+    --profile latex_profile.json --refs literature.json \
+    --charts-dir charts/ --bib-out refs.bib --report convert_report.json
+```
+转换器按 profile 自动处理：章节映射、剥离 md 标题序号（模板自动编号时）、
+图题在下/表题在上、按模板宏包能力降级表格样式、`[1]/[2-4]/[1,3]` → `\cite{}`、
+LaTeX 特殊字符转义（`%` 是最高频事故点）、按模板有无 bib 机制决定 `.bib` 还是内嵌 `thebibliography`。
+
+**退出码为 3 时必须逐条看完 `convert_report.json` 的 `warnings`**：预警包括图片未找到、
+残留的 `<!-- chart: -->` 占位符、引用编号在文献表里不存在、md 文献条目与结构化元数据对不上。
+
+**步骤 2：组装 + 编译**
+```
+python tools/build_paper_pdf.py --body body.tex --profile latex_profile.json \
+    --report convert_report.json --bib refs.bib \
+    -o "论文标题.pdf" --build-report build_report.json
+```
+- 模板可用时注入外壳（保留封面/声明/目录，整段替换示例正文与示例摘要）；
+  不可用时用 `assets/default_paper.tex` 骨架并在 stderr 明确打印 `[FALLBACK]` 原因
+- 缺图片会自动补占位图并重编（避免 graphicx 只警告、图位静默留空），但**必须补回真实图表后重编**
+- 编译失败会自动回退骨架重试；两者都失败则退出码 3 并保留 `paper.tex` 与 `.log`
+
+**步骤 3：交付前检查 `build_report.json`**
+- `success: true`、`pages` 正常、`compile.missing_deps` 为空、`compile.undefined_refs` 为空
+- `compile.filled_placeholders` 非空 ⇒ 有占位图，必须补回真实图表后重编
+- `mode: skeleton` ⇒ 未用上用户模板，交付时必须说明原因
+
+对应资源：
+- `tools/analyze_latex_template.py` — LaTeX 模板分析（引擎/宏包/注入点/排版参数/编译探测）
+- `tools/md_to_latex.py` — Markdown → LaTeX 正文
+- `tools/build_paper_pdf.py` — 外壳注入 + latexmk 编译 + 回退
+- `assets/default_paper.tex` — 内置兜底骨架（占位符由 build 脚本替换）
+- `references/latex_template_guide.md` — 模板处理指南
+- `references/default_latex_format.md` — LaTeX 默认格式规范
+
 ### 9. 最终检查
 
 交付前检查：
@@ -338,7 +418,8 @@ B. 直接粘贴格式要求，如："标题黑体二号居中，正文宋体小�
 - 文献核验清单中是否有"不可信"条目
 - 字数是否在目标范围内
 - 图表编号是否连续
-- `.docx` 文件是否真实生成
+- `.docx` 文件是否真实生成（Word 链路）
+- **LaTeX 链路**：`build_report.json` 的 `success` 是否为 `true`、`missing_deps` / `undefined_refs` 是否为空、有无占位图、`.tex` 源文件是否与 PDF 一起交付
 - 文件名是否为论文标题
 - **降AI检查是否通过**（`python tools/humanize_check.py <paper.md> --markdown`）
 
@@ -406,10 +487,20 @@ python tools/humanize_check.py paper.md --markdown --write
 | 英文文献 JSON | `{ts}_literature_en.json` | literature_collected |
 | 图表 HTML 源码 | `{ts}_fig1_xxx.html` | writing |
 | 文献核验清单 | `{ts}_reference_checklist.md` | delivery |
+| **LaTeX 模板配置 JSON** | `{ts}_latex_profile.json` | format_confirmed |
+| **LaTeX 模板全文 TXT（带行号标注）** | `{ts}_latex_template_text.txt` | format_confirmed |
+| **LaTeX 正文片段** | `{ts}_body.tex` | pdf_built |
+| **参考文献 .bib（bibtex 模式）** | `{ts}_refs.bib` | pdf_built |
+| **转换报告 JSON** | `{ts}_convert_report.json` | pdf_built |
+| **编译报告 JSON** | `{ts}_build_report.json` | pdf_built |
 
 **不清扫的文件（与中间产物一起保留在 papers/ 目录）：**
 - 论文 `.md` 终稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.md`
 - 论文 `.docx` 终稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.docx`
+- 论文 `.pdf` 成稿 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_论文终稿.pdf`
+- LaTeX 源工程 → `papers/{YYYYMMDD}_{序号}/paper.tex`、`refs.bib`、`charts/`
+  （学校常要求交可编译源文件，三者必须齐备；`paper.tex` 与图表相对路径已就位，
+  用户拿到目录后直接 `latexmk -xelatex paper.tex` 即可重编）
 - 图表 `.png` 渲染成品 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_fig1_xxx.png`
 - 降AI检测报告 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_aigc_report.md`
 - 改写后论文 → `papers/{YYYYMMDD}_{序号}/{YYYYMMDD}_{序号}_rewritten.docx`
@@ -480,7 +571,7 @@ python tools/humanize_check.py paper.md --markdown --write
 ## Resource Map
 
 ### Prompts
-- `prompts/format_extractor.md` — 格式提取（模板 & 文字描述）
+- `prompts/format_extractor.md` — 格式提取（DOCX 模板 / LaTeX 模板 / 文字描述）
 - `prompts/topic_selector.md` — 选题生成
 - `prompts/outline_builder.md` — 大纲构建
 - `prompts/chapter_writer.md` — 章节写作
@@ -490,6 +581,9 @@ python tools/humanize_check.py paper.md --markdown --write
 
 ### Tools
 - `tools/analyze_template.py` — DOCX 模板格式提取
+- `tools/analyze_latex_template.py` — LaTeX 模板分析（引擎/宏包/注入点/排版参数/编译探测）
+- `tools/md_to_latex.py` — Markdown → LaTeX 正文片段
+- `tools/build_paper_pdf.py` — LaTeX 外壳注入 + latexmk 编译 + 骨架回退
 - `tools/literature_scraper.py` — 多源文献爬虫
 - `tools/render_html_chart.py` — HTML 图表渲染
 - `tools/diagram_gen.py` — Mermaid 图表渲染（新增：流程图/架构图/UML/ER图）
@@ -497,9 +591,17 @@ python tools/humanize_check.py paper.md --markdown --write
 - `tools/generate_paper_docx.py` — DOCX 成稿（Markdown→DOCX 整体转换）
 - `tools/docx_io.py` — DOCX 段落级读写替换（新增：检测/改写模式用）
 
+运行时依赖：Word 链路需 `requirements.txt`（python-docx / Pillow / playwright）；
+LaTeX 链路额外需系统安装 TeX Live（含 `latexmk`、`ctex`、`xeCJK`，页数统计用 `pdfinfo`）。
+
+### Assets
+- `assets/default_paper.tex` — LaTeX 内置兜底骨架（占位符由 build 脚本替换）
+
 ### References
 - `references/course_paper_structure.md` — 课程论文结构模板
-- `references/default_format.md` — 默认格式规范
+- `references/default_format.md` — 默认格式规范（Word）
+- `references/default_latex_format.md` — LaTeX 默认格式规范 + 字号/常见坑速查
+- `references/latex_template_guide.md` — LaTeX 模板处理指南（注入点规则 + 实测坑）
 - `references/humanize_platforms.md` — 各平台降AI策略
 - `references/humanize_matrix_template.md` — humanize_matrix.md 模板
 - `references/ai_pattern_taxonomy.md` — 35+ AI 模式分类学（含 S06-S10 PaperPass 五模式）

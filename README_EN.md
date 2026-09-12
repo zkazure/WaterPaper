@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  One sentence → topics → <strong>real references</strong> grabbed → <strong>standard formatting</strong> applied → <strong>AI detection</strong> lowered → <strong>plagiarism</strong> reduced → .docx delivered<br/>
+  One sentence → topics → <strong>real references</strong> grabbed → <strong>standard formatting</strong> applied → <strong>AI detection</strong> lowered → <strong>plagiarism</strong> reduced → .docx / .pdf delivered<br/>
   It's not about cutting corners — it's about automating the grunt work so you can spend time on what actually matters.
 </p>
 
@@ -62,6 +62,27 @@ Help me reduce the AI detection score for my paper: [paper path], [plagiarism re
 ```
 
 The AI will walk through the full pipeline: **get template → propose topics → crawl references → build outline → write body → generate charts → deliver .docx**
+
+School LaTeX templates are supported too — output lands as a PDF (plus a compilable `.tex` source):
+
+```
+Use this skill to write a final paper on mobile communication technology, 4000 words, use my school's LaTeX template template.tex, produce a PDF
+```
+
+The pipeline is identical to the Word one (topics / references / writing / de-AI / de-plagiarism all
+share the same Markdown intermediate); only format extraction and final output differ:
+
+```
+template.tex → template analysis (engine / packages / injection point / layout params / compile probe)
+             → inject body into the template shell (cover, declaration page and TOC preserved)
+             → latexmk compile → paper.pdf + paper.tex
+```
+
+When the template is incomplete (no `\begin{document}`, no injection point, or it fails to compile),
+the skill falls back to a built-in skeleton and **tells you explicitly that your template was not used,
+and why** — it never pretends to have used it.
+
+> Requirement: the PDF path needs TeX Live installed locally (`latexmk`, `ctex`, `xeCJK`).
 
 ## Why You Need This
 
