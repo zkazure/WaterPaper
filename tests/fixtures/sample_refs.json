@@ -1,0 +1,36 @@
+[
+  {
+    "title": "基于 LSTM 的城市用水量短期预测",
+    "authors": ["李四", "王五"],
+    "year": 2024,
+    "source": "水利学报",
+    "source_type": "journal",
+    "volume": "55",
+    "number": "3",
+    "pages": "301-310",
+    "doi": "https://doi.org/10.13243/j.cnki.slxb.2024.03.007",
+    "url": "https://doi.org/10.13243/j.cnki.slxb.2024.03.007",
+    "verified": true
+  },
+  {
+    "title": "Deep learning for water demand forecasting",
+    "authors": ["Smith, John", "Doe, Jane"],
+    "year": 2023,
+    "source": "Proceedings of the International Conference on Water Resources",
+    "source_type": "conference",
+    "pages": "112-120",
+    "doi": "",
+    "url": "https://example.org/icwr2023/smith",
+    "verified": true
+  },
+  {
+    "title": "城市供水管网优化调度研究",
+    "authors": ["张六"],
+    "year": 2022,
+    "source": "清华大学",
+    "source_type": "thesis",
+    "doi": "",
+    "url": "https://example.org/thesis/zhangliu",
+    "verified": true
+  }
+]
