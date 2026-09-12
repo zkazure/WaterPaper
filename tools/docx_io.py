@@ -10,10 +10,10 @@ Commands:
   insert_figure <file> <idx> <img>  Insert image + caption after paragraph <idx>
 """
 
-import sys
 import os
 import re
 import shutil
+import sys
 
 
 def read_docx(file_path: str) -> str:
@@ -289,8 +289,6 @@ def _extract_template_formats(tdoc):
     Returns a dict with keys: title, heading1, heading2, heading3, body.
     Each value is a dict of format properties.
     """
-    from docx.oxml.ns import qn
-
     # Collect all paragraph format signatures grouped by font size
     size_groups = {}
     for para in tdoc.paragraphs:
@@ -331,9 +329,7 @@ def _extract_template_formats(tdoc):
             fmt["title"] = props
             continue
         # Assign remaining levels by position (skip body once reached)
-        if "title" in fmt and i == 1 and "heading1" not in fmt:
-            fmt["heading1"] = props
-        elif "heading1" not in fmt:
+        if "title" in fmt and i == 1 and "heading1" not in fmt or "heading1" not in fmt:
             fmt["heading1"] = props
         elif "heading2" not in fmt:
             fmt["heading2"] = props
@@ -401,8 +397,8 @@ def _copy_page_layout(doc, template_path: str):
 
 def _apply_format(paragraph, props, fmt):
     """Apply formatting properties to a paragraph and its runs."""
-    from docx.shared import Pt, Emu, Cm
     from docx.oxml.ns import qn
+    from docx.shared import Pt
 
     if not props:
         return
@@ -459,6 +455,9 @@ def _apply_format(paragraph, props, fmt):
 
 def _add_markdown_runs(paragraph, text, props, fmt):
     """Parse **bold** and *italic* markers in text and add runs accordingly."""
+    from docx.oxml.ns import qn
+    from docx.shared import Pt
+
     parts = re.split(r'(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*)', text)
     for part in parts:
         if not part:
@@ -515,7 +514,6 @@ def formatted_write_docx(file_path: str, text: str, template_path: str = None):
     Markdown headings (# ## ###) map to heading1/heading2/heading3 formatting.
     """
     from docx import Document
-    from docx.shared import Pt
 
     doc = Document()
 
@@ -571,9 +569,9 @@ def insert_figure(file_path: str, paragraph_index: int, image_path: str,
                   caption: str = "", output_path: str = None) -> str:
     """Insert an image + caption paragraph after the specified paragraph index."""
     from docx import Document
-    from docx.shared import Cm, Pt
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.oxml.ns import qn
+    from docx.shared import Cm, Pt
 
     doc = Document(file_path)
     paragraphs = doc.paragraphs
