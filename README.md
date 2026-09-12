@@ -48,7 +48,7 @@
 把本项目的 GitHub 地址或下载到本地的文件夹路径，发给你的 AI 编程助手（Claude Code / Codex / Trae / Cursor 等），然后说：
 
 ```
-帮我安装这个 skill：https://github.com/ThisIsLittleSky/WaterPaper.git
+帮我安装这个 skill：https://github.com/zkazure/WaterPaper.git
 ```
 
 AI agent会自动完成配置
