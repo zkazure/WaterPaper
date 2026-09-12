@@ -754,6 +754,7 @@ def probe_compile(
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
             return {
